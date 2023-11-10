@@ -1,0 +1,8 @@
+<resources>
+        <string name="app_name">AreWeThereYet</string>
+        <string name="message_hint">Enter your message</string>
+        <string name="phone_hint">Enter phone number</string>
+        <string name="minutes_hint">Minutes between messages</string>
+        <string name="start">Start</string>
+        <string name="stop">Stop</string>
+</resources>
