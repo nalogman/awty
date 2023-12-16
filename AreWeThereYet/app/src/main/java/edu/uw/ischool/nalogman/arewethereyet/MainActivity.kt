@@ -1,8 +1,10 @@
 package edu.uw.ischool.nalogman.arewethereyet
 
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.telephony.SmsManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
@@ -15,14 +17,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var startStopButton: Button
     private var isServiceStarted = false
     private val handler = Handler(Looper.getMainLooper())
-    private val runnable = object : Runnable {
+    private lateinit var phoneNumber: String
+    private lateinit var messageText: String
+
+    private val sendSmsRunnable = object : Runnable {
         override fun run() {
             if (isServiceStarted) {
-                Toast.makeText(
-                    this@MainActivity,
-                    "${phoneNumberEditText.text}: ${messageEditText.text}",
-                    Toast.LENGTH_SHORT
-                ).show()
+                sendSms(phoneNumber, messageText)
                 handler.postDelayed(this, minutesEditText.text.toString().toLong() * 60000)
             }
         }
@@ -82,8 +83,24 @@ class MainActivity : AppCompatActivity() {
         // Flag the service as started
         isServiceStarted = true
 
-        // Schedule the first Toast
-        handler.post(runnable)
+        // Save phone number and message text
+        phoneNumber = phoneNumberEditText.text.toString()
+        messageText = messageEditText.text.toString()
+
+        // Check for SMS permission
+        if (checkSelfPermission(android.Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED) {
+            // Permission granted, schedule the first SMS
+            handler.post(sendSmsRunnable)
+        } else {
+            // Permission not granted, request it
+            requestPermissions(arrayOf(android.Manifest.permission.SEND_SMS), REQUEST_SMS_PERMISSION)
+        }
+    }
+
+    private fun sendSms(phoneNumber: String, message: String) {
+        // Send SMS
+        val smsManager = SmsManager.getDefault()
+        smsManager.sendTextMessage(phoneNumber, null, message, null, null)
     }
 
     private fun stopService() {
@@ -93,7 +110,11 @@ class MainActivity : AppCompatActivity() {
         // Flag the service as stopped
         isServiceStarted = false
 
-        // Remove any pending posts of the runnable from the handler
-        handler.removeCallbacks(runnable)
+        // Remove any pending posts of the SMS sending runnable from the handler
+        handler.removeCallbacks(sendSmsRunnable)
+    }
+
+    companion object {
+        private const val REQUEST_SMS_PERMISSION = 1
     }
 }
